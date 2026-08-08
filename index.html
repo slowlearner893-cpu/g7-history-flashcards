@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>G7 East Asian History — Flashcards</title>
+<style>
+  :root{
+    --slate-900:#1b2430; --slate-800:#222d3b; --slate-700:#2c3a4c; --slate-600:#3a4c62;
+    --ink:#1b2430; --paper:#f6f1e9; --paper-2:#efe7db;
+    --copper:#b46b3c; --copper-lt:#c9895c; --copper-dk:#8f5027;
+    --teal:#3f7a8c; --teal-lt:#5a97a9; --teal-dk:#2c5c6b;
+    --good:#2f7d5b; --good-bg:#e3f2ea; --bad:#b23b3b; --bad-bg:#f7e5e5;
+    --muted:#7b8794;
+    --shadow:0 10px 30px rgba(20,30,45,.16);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,var(--slate-800),var(--slate-900));
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:16px; padding-bottom:32px;
+  }
+  .wrap{width:100%; max-width:720px; margin:0 auto}
+  header{color:var(--paper); text-align:center; margin:6px 0 14px}
+  header h1{font-family:Georgia,"Times New Roman",serif; font-weight:600; font-size:1.28rem; margin:0 0 10px; letter-spacing:.2px}
+  .bar{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center}
+  select{
+    font-size:.95rem; padding:9px 12px; border-radius:10px; border:1px solid var(--slate-600);
+    background:var(--paper); color:var(--ink); max-width:100%; font-weight:600;
+  }
+  .modes{display:inline-flex; background:rgba(255,255,255,.10); border-radius:12px; padding:4px; flex-wrap:wrap; justify-content:center}
+  .modes button{
+    border:0; background:transparent; color:var(--paper); font-weight:600; font-size:.9rem;
+    padding:8px 14px; border-radius:9px; cursor:pointer; transition:.15s;
+  }
+  .modes button.active{background:var(--copper); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+  .stage{margin:20px 0 10px}
+  .progress{color:var(--paper); opacity:.85; text-align:center; font-size:.86rem; letter-spacing:.4px; margin-bottom:12px}
+  .progress b{opacity:1}
+
+  /* ---- Flip card ---- */
+  .card{
+    position:relative; width:100%; min-height:300px; cursor:pointer;
+    perspective:1600px; -webkit-tap-highlight-color:transparent; user-select:none;
+  }
+  .card-inner{position:relative; width:100%; min-height:300px; transition:transform .5s cubic-bezier(.4,.15,.2,1); transform-style:preserve-3d}
+  .card.flipped .card-inner{transform:rotateY(180deg)}
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    background:var(--paper); border-radius:18px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:34px 28px; text-align:center; border:1px solid rgba(0,0,0,.06);
+  }
+  .face::before{content:""; position:absolute; left:0; top:0; bottom:0; width:7px; border-radius:18px 0 0 18px; background:var(--copper)}
+  .face .kicker{position:absolute; top:16px; left:0; right:0; text-align:center; font-size:.68rem; letter-spacing:2px; text-transform:uppercase; color:var(--copper-dk); font-weight:700}
+  .back{transform:rotateY(180deg)}
+  .term{font-family:Georgia,serif; font-size:2rem; font-weight:600; line-height:1.2; color:var(--ink)}
+  .def{font-size:1.18rem; line-height:1.5; color:#2b3644; max-width:40ch}
+  .hint{position:absolute; bottom:14px; left:0; right:0; text-align:center; font-size:.74rem; color:var(--muted)}
+
+  /* ---- Type mode ---- */
+  .typecard{
+    background:var(--paper); border-radius:18px; box-shadow:var(--shadow); padding:30px 26px 26px;
+    border:1px solid rgba(0,0,0,.06); position:relative; min-height:300px; display:flex; flex-direction:column;
+  }
+  .typecard::before{content:""; position:absolute; left:0; top:0; bottom:0; width:7px; border-radius:18px 0 0 18px; background:var(--copper)}
+  .prompt-kicker{font-size:.68rem; letter-spacing:2px; text-transform:uppercase; color:var(--copper-dk); font-weight:700; margin-bottom:12px}
+  .prompt{font-size:1.28rem; line-height:1.5; color:#202a36; flex:1; display:flex; align-items:center}
+  .answer-row{display:flex; gap:10px; margin-top:18px}
+  .answer-row input{
+    flex:1; font-size:1.1rem; padding:13px 15px; border-radius:11px;
+    border:2px solid #d8cdbb; background:#fff; color:var(--ink); outline:none; font-family:inherit;
+  }
+  .answer-row input:focus{border-color:var(--copper-lt)}
+  .answer-row button{
+    border:0; background:var(--copper); color:#fff; font-weight:700; font-size:1rem;
+    padding:0 22px; border-radius:11px; cursor:pointer;
+  }
+  .feedback{margin-top:16px; border-radius:12px; padding:14px 16px; font-size:1rem; display:none}
+  .feedback.show{display:block}
+  .feedback.correct{background:var(--good-bg); color:var(--good); border:1px solid #bfe0cd}
+  .feedback.incorrect{background:var(--bad-bg); color:var(--bad); border:1px solid #ecc9c9}
+  .feedback .ans{color:var(--ink); font-weight:700}
+  .feedback.correct .ans{color:var(--good)}
+  .score{color:var(--paper); text-align:center; font-size:.86rem; opacity:.85; margin-top:14px}
+
+  /* ---- Controls ---- */
+  .controls{display:flex; gap:10px; justify-content:center; align-items:center; margin-top:18px; flex-wrap:wrap}
+  .controls button{
+    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.08); color:var(--paper);
+    font-weight:600; font-size:.95rem; padding:11px 18px; border-radius:11px; cursor:pointer; transition:.15s;
+  }
+  .controls button:hover{background:rgba(255,255,255,.16)}
+  .controls button.primary{background:var(--copper); border-color:var(--copper); color:#fff}
+  .controls button.primary:hover{background:var(--copper-lt)}
+  .controls .spacer{width:6px}
+  .toggle-line{display:flex; justify-content:center; margin-top:14px}
+  .toggle-line label{color:var(--paper); opacity:.82; font-size:.82rem; display:inline-flex; align-items:center; gap:8px; cursor:pointer}
+  footer{color:var(--paper); opacity:.5; font-size:.72rem; text-align:center; margin-top:22px; line-height:1.5}
+
+  /* ---- Game mode ---- */
+  .scoreboard{display:flex; gap:12px; margin-bottom:16px}
+  .pscore{flex:1; background:rgba(255,255,255,.07); border:2px solid transparent; border-radius:14px; padding:12px 14px; text-align:center; transition:.2s}
+  .pscore .pname{color:var(--paper); font-weight:700; font-size:.95rem; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .pscore .pval{font-family:Georgia,serif; font-size:2rem; font-weight:700; line-height:1.1; margin-top:2px}
+  .pscore.p1 .pval{color:var(--copper-lt)} .pscore.p2 .pval{color:var(--teal-lt)}
+  .pscore.p1.active{border-color:var(--copper); background:rgba(180,107,60,.16); box-shadow:0 0 0 1px var(--copper) inset}
+  .pscore.p2.active{border-color:var(--teal); background:rgba(63,122,140,.16); box-shadow:0 0 0 1px var(--teal) inset}
+  .turnbanner{text-align:center; color:var(--paper); font-weight:700; font-size:1.02rem; margin-bottom:12px; letter-spacing:.3px}
+  .turnbanner .to-target{display:block; font-weight:500; font-size:.78rem; opacity:.7; margin-top:3px}
+  .gcard{
+    background:var(--paper); border-radius:18px; box-shadow:var(--shadow); padding:28px 24px; position:relative;
+    border:1px solid rgba(0,0,0,.06); min-height:290px; display:flex; flex-direction:column;
+  }
+  .gcard.p1::before,.gcard.p2::before{content:""; position:absolute; left:0; top:0; bottom:0; width:7px; border-radius:18px 0 0 18px}
+  .gcard.p1::before{background:var(--copper)} .gcard.p2::before{background:var(--teal)}
+  .gcard .prompt-kicker.p1{color:var(--copper-dk)} .gcard .prompt-kicker.p2{color:var(--teal-dk)}
+  .gcard .reveal-answer{margin-top:14px; text-align:center; display:none}
+  .gcard .reveal-answer.show{display:block}
+  .gcard .reveal-answer .lbl{font-size:.66rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .gcard .reveal-answer .term{font-size:1.7rem; margin-top:4px}
+  .gcard .reveal-answer .gdef{font-size:1.16rem; line-height:1.45; color:#2b3644; margin-top:4px; max-width:44ch; margin-left:auto; margin-right:auto}
+  #gPrompt.as-term{font-family:Georgia,serif; font-size:1.9rem; font-weight:600; color:var(--ink); flex:1; align-items:center}
+  .saynote{font-size:.8rem; color:var(--muted); margin-top:12px; font-style:italic}
+  .selfhint{margin-top:10px; font-size:.86rem; text-align:center; min-height:1.1em}
+  .selfhint.ok{color:var(--good)} .selfhint.no{color:var(--bad)}
+  .gbtns{display:flex; gap:10px; margin-top:16px}
+  .gbtns button{flex:1; border:0; border-radius:12px; padding:14px; font-weight:700; font-size:1rem; cursor:pointer}
+  .btn-reveal{background:var(--slate-700); color:#fff}
+  .btn-got{background:var(--good); color:#fff} .btn-miss{background:var(--bad); color:#fff}
+  .gsetup, .gwin{background:var(--paper); border-radius:18px; box-shadow:var(--shadow); padding:26px 24px; border:1px solid rgba(0,0,0,.06)}
+  .gsetup h2, .gwin h2{font-family:Georgia,serif; margin:0 0 4px; font-size:1.3rem; color:var(--ink)}
+  .gsetup p.sub{margin:0 0 18px; color:var(--muted); font-size:.9rem}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:.78rem; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--muted); margin-bottom:6px}
+  .field input, .field select{width:100%; font-size:1.05rem; padding:12px 14px; border-radius:11px; border:2px solid #d8cdbb; background:#fff; color:var(--ink); font-family:inherit}
+  .field.p1 input{border-color:var(--copper-lt)} .field.p2 input{border-color:var(--teal-lt)}
+  .btn-start{width:100%; margin-top:8px; border:0; background:var(--copper); color:#fff; font-weight:700; font-size:1.05rem; padding:15px; border-radius:12px; cursor:pointer}
+  .gwin{text-align:center}
+  .gwin .trophy{font-size:2.6rem; margin-bottom:6px}
+  .gwin .finalscore{font-family:Georgia,serif; font-size:1.6rem; margin:10px 0 20px; color:var(--ink)}
+  .gwin .winner-name{font-weight:700}
+  .gwin-btns{display:flex; gap:10px}
+  .gwin-btns button{flex:1; border:0; border-radius:12px; padding:14px; font-weight:700; font-size:1rem; cursor:pointer}
+  .btn-again{background:var(--copper); color:#fff} .btn-newp{background:var(--slate-700); color:#fff}
+
+  @media (max-width:520px){
+    .term{font-size:1.6rem} .def{font-size:1.05rem} .prompt{font-size:1.12rem}
+    header h1{font-size:1.08rem} .controls button{padding:10px 14px}
+    .pscore .pval{font-size:1.7rem}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Grade 7 East Asian History · Flashcards</h1>
+    <div class="bar">
+      <select id="unitSelect" aria-label="Choose a unit"></select>
+      <div class="modes" role="tablist">
+        <button id="mFlip" class="active" role="tab">Flip Cards</button>
+        <button id="mType" role="tab">Type the Term</button>
+        <button id="mGame" role="tab">2-Player Game</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="stage">
+    <!-- FLIP -->
+    <div id="flipView">
+      <div class="card" id="card" tabindex="0" aria-label="Flashcard, tap to flip">
+        <div class="card-inner">
+          <div class="face front">
+            <div class="kicker" id="frontKicker">Term</div>
+            <div class="term" id="frontText"></div>
+            <div class="hint">tap to flip</div>
+          </div>
+          <div class="face back">
+            <div class="kicker">Definition</div>
+            <div class="def" id="backText"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE -->
+    <div id="typeView" style="display:none">
+      <div class="typecard">
+        <div class="prompt-kicker">What term is this?</div>
+        <div class="prompt" id="typePrompt"></div>
+        <div class="answer-row">
+          <input id="typeInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the term…">
+          <button id="checkBtn">Check</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+      <div class="score" id="score"></div>
+    </div>
+
+    <!-- GAME -->
+    <div id="gameView" style="display:none">
+      <!-- setup -->
+      <div class="gsetup" id="gameSetup">
+        <h2>2-Player Game</h2>
+        <p class="sub">Take turns. See the definition, recall the term, reveal it, then tap ✓ or ✗ honestly. First to the target score wins.</p>
+        <div class="field p1"><label>Player One</label><input id="p1name" type="text" maxlength="20" placeholder="Player One" value="Player One"></div>
+        <div class="field p2"><label>Player Two</label><input id="p2name" type="text" maxlength="20" placeholder="Player Two" value="Player Two"></div>
+        <div class="field"><label>Quiz style</label>
+          <select id="styleSel">
+            <option value="d2t" selected>See the definition → recall the term</option>
+            <option value="t2d">See the term → recall the definition</option>
+            <option value="mix">Mix of both</option>
+          </select>
+        </div>
+        <div class="field"><label>Play to</label>
+          <select id="targetSel">
+            <option value="5">5 points</option>
+            <option value="10" selected>10 points</option>
+            <option value="15">15 points</option>
+            <option value="20">20 points</option>
+          </select>
+        </div>
+        <button class="btn-start" id="startGameBtn">Start Game</button>
+      </div>
+
+      <!-- play -->
+      <div id="gamePlay" style="display:none">
+        <div class="scoreboard">
+          <div class="pscore p1" id="ps1"><div class="pname" id="ps1name">Player One</div><div class="pval" id="ps1val">0</div></div>
+          <div class="pscore p2" id="ps2"><div class="pname" id="ps2name">Player Two</div><div class="pval" id="ps2val">0</div></div>
+        </div>
+        <div class="turnbanner" id="turnBanner"></div>
+        <div class="gcard" id="gcard">
+          <div class="prompt-kicker" id="gKicker">What term is this?</div>
+          <div class="prompt" id="gPrompt"></div>
+          <div class="answer-row" id="gInputRow">
+            <input id="gInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type it, or just say it aloud…">
+          </div>
+          <div class="saynote" id="gSayNote" style="display:none">Say the answer aloud, then reveal it and score yourself.</div>
+          <div class="reveal-answer" id="gReveal">
+            <div class="lbl">Answer</div>
+            <div class="term" id="gAnswer"></div>
+            <div class="selfhint" id="gSelfHint"></div>
+          </div>
+          <div class="gbtns" id="gBtnsReveal">
+            <button class="btn-reveal" id="revealBtn">Reveal Answer</button>
+          </div>
+          <div class="gbtns" id="gBtnsJudge" style="display:none">
+            <button class="btn-miss" id="missBtn">✗ Missed</button>
+            <button class="btn-got" id="gotBtn">✓ Got it +1</button>
+          </div>
+        </div>
+        <div class="toggle-line"><label id="newGameLink" style="cursor:pointer">↺ New game / change settings</label></div>
+      </div>
+
+      <!-- win -->
+      <div class="gwin" id="gameWin" style="display:none">
+        <div class="trophy">🏆</div>
+        <h2><span class="winner-name" id="winnerName"></span> wins!</h2>
+        <div class="finalscore" id="finalScore"></div>
+        <div class="gwin-btns">
+          <button class="btn-again" id="againBtn">Play Again</button>
+          <button class="btn-newp" id="newpBtn">New Players</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls">
+    <button id="prevBtn">‹ Prev</button>
+    <button id="flipBtn" class="primary">Flip</button>
+    <button id="nextBtn">Next ›</button>
+    <span class="spacer"></span>
+    <button id="shuffleBtn">🔀 Shuffle</button>
+  </div>
+
+  <div class="toggle-line" id="dirToggleLine">
+    <label><input type="checkbox" id="dirToggle"> Show definition first</label>
+  </div>
+
+  <footer>
+    Built from the Grade 7 objectives &amp; worksheets. Study solo, or play head-to-head.
+  </footer>
+</div>
+
+<script>
+const DATA = {"units": [{"id": 1, "name": "Unit 1: Ancient Civilizations (14,000 BCE – 1 CE)", "count": 120}], "decks": {"1": [{"term": "Pan Gu", "def": "The giant in Chinese mythology whose body formed the world when he died, separating the earth from the sky.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Nu Wa", "def": "The goddess in Chinese mythology who created human beings, shaping them from mud or clay.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Brahma", "def": "The Hindu god who creates the world; one of the three gods of the Trimurti.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Vishnu", "def": "The Hindu god who preserves and protects the world; one of the three gods of the Trimurti.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Shiva", "def": "The Hindu god who destroys the world so it can be created again; one of the three gods of the Trimurti.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Trimurti", "def": "Brahma, Vishnu and Shiva together — the creator, the preserver, and the destroyer", "source": "both", "reviewed": true, "lesson": "5.1.1b", "unit": 1}, {"term": "Izanami", "def": "The goddess in Japanese mythology who, with Izanagi, created the islands of Japan.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Izanagi", "def": "The god in Japanese mythology who, with Izanami, created the islands of Japan.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "specialization of labor", "def": "When people do different specific jobs instead of everyone doing the same work, made possible when farming produces enough food to free some people for other tasks.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "social hierarchies", "def": "The ranking of people into higher and lower groups, with some having more power or wealth than others.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "urbanization", "def": "The growth of cities as more and more people come to live and work close together.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "systems of writing", "def": "Organized ways of recording language with symbols, used to keep records and pass on information.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Huang He (Yellow River)", "def": "The river in northern China where Chinese civilization first developed; also called the Yellow River.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Chang Jiang (Yangzi River)", "def": "The long river in central and southern China; also called the Yangzi River.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Indus River", "def": "The river in South Asia (modern Pakistan) where the Harappan civilization developed.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Ganges River", "def": "A major river in northern India, important to Indian civilization and to Hinduism.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Deccan", "def": "The large plateau that makes up much of southern India.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "archipelago", "def": "a chain of islands", "source": "both", "reviewed": true, "lesson": "5.2.1b", "unit": 1}, {"term": "Kansai", "def": "A region in central Japan, around present-day Osaka, Kyoto, and Nara.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Yamato", "def": "The plain and early ruling clan of central Japan that became the center of early Japanese power.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Honshu", "def": "The largest of the main islands of Japan.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Kanto", "def": "The region of eastern Japan around present-day Tokyo, containing a large plain.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Kyushu", "def": "The southernmost of Japan's main large islands, the one closest to the Asian mainland.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Harappan civilization", "def": "The ancient civilization of the Indus River valley, known for its carefully planned cities.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "planned cities", "def": "a city built to a design decided in advance, not one that grew up by accident", "source": "both", "reviewed": true, "lesson": "5.2.2a", "unit": 1}, {"term": "Indus Valley", "def": "The region along the Indus River where the Harappan civilization arose.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Harappa", "def": "One of the two great cities of the Harappan civilization.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Mohenjo Daro", "def": "One of the two great cities of the Harappan civilization, famous for its planned layout and its Great Bath.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "pictograms", "def": "Picture-symbols used in writing, where a small picture stands for a word or an idea.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "trade seals", "def": "Small carved stamps the Harappans used to mark goods for trade.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Great Bath", "def": "A large, watertight brick pool at Mohenjo-Daro, probably used for religious or ritual bathing.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Priest-King statue", "def": "A small carved statue from Mohenjo-Daro that may show a leader or important figure of the Harappans.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Huang He Valley", "def": "The valley of the Yellow River in northern China, the birthplace of Chinese civilization.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Erlitou", "def": "An early archaeological site in the Yellow River valley with palaces and bronze workshops but no writing; possibly the Xia.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Xia Dynasty", "def": "The first dynasty named in later Chinese histories; debated because its people left no writing of their own.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Shang Dynasty", "def": "China's first fully-documented dynasty, which left written records carved on oracle bones.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "oracle bone inscriptions", "def": "animal bones or turtle shells that Shang kings used to ask questions of the gods and ancestors", "source": "both", "reviewed": true, "lesson": "5.2.2b", "unit": 1}, {"term": "Mandate of Heaven", "def": "the belief that Heaven gives a just ruler the right to rule — and takes that right away from a cruel or unjust one", "source": "both", "reviewed": true, "lesson": "5.2.2c", "unit": 1}, {"term": "Dynastic Cycle", "def": "the repeating pattern in which a dynasty rises with the mandate, rules, declines, and is replaced by a new dynasty", "source": "both", "reviewed": true, "lesson": "5.2.2c", "unit": 1}, {"term": "Sanxingdui", "def": "An ancient site in the Sichuan Basin with unique bronze masks — a culture that left no writing and is not mentioned in any later books.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Sichuan Basin", "def": "A lowland region in southwestern China, home to the Sanxingdui culture.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Jomon Culture", "def": "The ancient hunter-gatherer culture of Japan, known for its cord-marked pottery.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "hunter-gatherer", "def": "a person who survives by hunting animals and gathering plants, moving from place to place", "source": "both", "reviewed": true, "lesson": "5.2.1a", "unit": 1}, {"term": "matriarchal", "def": "Describing a society in which women hold much of the power or leadership.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Jomon pottery", "def": "clay pots decorated by pressing cords or ropes into the wet clay before baking; the pottery that gives the Jomon Culture its name", "source": "both", "reviewed": true, "lesson": "5.2.2d", "unit": 1}, {"term": "Aryans", "def": "A group of Indo-European people who migrated into northern India, bringing Sanskrit and the Vedas.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Sanskrit", "def": "the ancient language of the Aryans — the language their sacred poems were composed in", "source": "both", "reviewed": true, "lesson": "5.3.1a", "unit": 1}, {"term": "Indo-European language", "def": "one of a large family of related languages reaching from India across Europe; the family Sanskrit belongs to", "source": "both", "reviewed": true, "lesson": "5.3.1a", "unit": 1}, {"term": "caste system", "def": "a way of dividing society into ranked groups that you are born into for life", "source": "both", "reviewed": true, "lesson": "5.3.1b", "unit": 1}, {"term": "brahmins (priests)", "def": "the priests — the highest caste", "source": "both", "reviewed": true, "lesson": "5.3.1b", "unit": 1}, {"term": "kshatriya (warriors)", "def": "the warriors and rulers — the second caste", "source": "both", "reviewed": true, "lesson": "5.3.1b", "unit": 1}, {"term": "samsara", "def": "the endless cycle of birth, death, and rebirth", "source": "both", "reviewed": true, "lesson": "5.3.2a", "unit": 1}, {"term": "dharma", "def": "duty — the actions a person is supposed to perform", "source": "both", "reviewed": true, "lesson": "5.3.2a", "unit": 1}, {"term": "karma", "def": "the record of a person's actions", "source": "both", "reviewed": true, "lesson": "5.3.2a", "unit": 1}, {"term": "Buddhism", "def": "the religion built on the teachings of the Buddha", "source": "both", "reviewed": true, "lesson": "5.3.2b", "unit": 1}, {"term": "Siddhartha Gautama", "def": "The prince who gave up his kingdom to seek the truth about suffering and became the Buddha.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "four noble truths", "def": "The Buddha's four core teachings: that life contains suffering, that suffering comes from desire, that suffering can end, and that the eightfold path is the way to end it.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "eightfold path", "def": "The Buddha's eight guidelines for right living that lead away from suffering.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Vedas", "def": "The oldest sacred texts of Hinduism, composed by the Aryans in Sanskrit.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Vedic Hinduism", "def": "The early form of Hinduism based on the Vedas and their rituals and sacrifices.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "fengjian (feudalism)", "def": "a system where a king grants land to nobles, and in return they serve him and rule that land for him", "source": "both", "reviewed": true, "lesson": "5.4.1a", "unit": 1}, {"term": "decentralization", "def": "when power moves away from the centre and into the hands of local rulers", "source": "both", "reviewed": true, "lesson": "5.4.1a", "unit": 1}, {"term": "Hundred Schools of Thought", "def": "The many competing philosophies that appeared in China during a time of disorder, as thinkers asked how to live and govern well.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Confucianism", "def": "The philosophy of Confucius, teaching that harmony comes from everyone knowing their role and treating others with respect.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Confucius", "def": "The Chinese teacher whose ideas about respect, duty, and good relationships became Confucianism.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "five relationships", "def": "Confucius's five key relationships — ruler and subject, father and son, husband and wife, older and younger sibling, and friend and friend — that hold society in harmony.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "filial piety", "def": "The Confucian duty to respect and care for your parents and elders.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Daoism", "def": "The Chinese philosophy that teaches living simply and in harmony with the Dao, the natural way of the universe.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Lao Zi", "def": "The thinker traditionally said to have founded Daoism.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Dao", "def": "'The Way' — the natural order of the universe that Daoists try to live in harmony with.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Legalism", "def": "The Chinese philosophy that people must be controlled by strict laws and harsh punishments.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Shang Yang", "def": "An early Legalist statesman who put strict laws and reforms into practice in the state of Qin.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Han Fei", "def": "The thinker who brought Legalist ideas together into a single philosophy.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "State of Qin", "def": "The Chinese state that used Legalism to grow powerful and later united China.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "rewards and punishments", "def": "The Legalist method of controlling people by rewarding obedience and harshly punishing disobedience.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Shintoism", "def": "The indigenous religion of Japan, based on the worship of kami — the spirits in nature.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "kami", "def": "The spirits or gods of Shinto, believed to live in nature: in mountains, rivers, trees, and storms.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Kofun period", "def": "The period of early Japan named after the giant keyhole-shaped burial mounds built for powerful rulers.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Kofun tombs", "def": "The huge keyhole-shaped burial mounds built for the rulers of early Japan.", "source": "objective", "reviewed": false, "lesson": null, "unit": 1}, {"term": "Formless", "def": "having no shape of its own", "source": "worksheet", "reviewed": true, "lesson": "5.1.1a", "unit": 1}, {"term": "Traditional", "def": "passed down from parents to children over a long time", "source": "worksheet", "reviewed": true, "lesson": "5.1.1a", "unit": 1}, {"term": "Creation myth", "def": "a traditional story that explains how the world or its people began", "source": "worksheet", "reviewed": true, "lesson": "5.1.1a", "unit": 1}, {"term": "Hierarchy", "def": "a system that ranks some people above others", "source": "worksheet", "reviewed": true, "lesson": "5.1.1a", "unit": 1}, {"term": "Preserve", "def": "to protect and keep something from being destroyed", "source": "worksheet", "reviewed": true, "lesson": "5.1.1b", "unit": 1}, {"term": "Destroy", "def": "to break or end something so completely it must be made again", "source": "worksheet", "reviewed": true, "lesson": "5.1.1b", "unit": 1}, {"term": "Characteristic", "def": "a feature or quality that something typically has", "source": "worksheet", "reviewed": true, "lesson": "5.2.1a", "unit": 1}, {"term": "Complex", "def": "made of many connected parts", "source": "worksheet", "reviewed": true, "lesson": "5.2.1a", "unit": 1}, {"term": "Civilization", "def": "a complex society with organized government, different jobs, and ways of keeping records", "source": "worksheet", "reviewed": true, "lesson": "5.2.1a", "unit": 1}, {"term": "Region", "def": "an area of land with features that make it different from other areas", "source": "worksheet", "reviewed": true, "lesson": "5.2.1b", "unit": 1}, {"term": "Emerge", "def": "to appear or begin to develop", "source": "worksheet", "reviewed": true, "lesson": "5.2.1b", "unit": 1}, {"term": "River valley", "def": "the low land on either side of a river, where flooding leaves rich soil", "source": "worksheet", "reviewed": true, "lesson": "5.2.1b", "unit": 1}, {"term": "Evidence", "def": "the objects, writings, and remains that historians use to work out what happened", "source": "worksheet", "reviewed": true, "lesson": "5.2.2a", "unit": 1}, {"term": "Conclusion", "def": "what you work out from evidence, even when the evidence does not say it directly", "source": "worksheet", "reviewed": true, "lesson": "5.2.2a", "unit": 1}, {"term": "Pacifistic", "def": "avoiding war and violence", "source": "worksheet", "reviewed": true, "lesson": "5.2.2a", "unit": 1}, {"term": "Document", "def": "a written record from the time being studied", "source": "worksheet", "reviewed": true, "lesson": "5.2.2b", "unit": 1}, {"term": "Site", "def": "a place where archaeologists dig and study", "source": "worksheet", "reviewed": true, "lesson": "5.2.2b", "unit": 1}, {"term": "Dynasty", "def": "a series of rulers who all come from the same family", "source": "worksheet", "reviewed": true, "lesson": "5.2.2b", "unit": 1}, {"term": "Justify", "def": "to give a good reason for something; to show that an action was right", "source": "worksheet", "reviewed": true, "lesson": "5.2.2c", "unit": 1}, {"term": "Overthrow", "def": "to remove a ruler or government from power, usually by force", "source": "worksheet", "reviewed": true, "lesson": "5.2.2c", "unit": 1}, {"term": "Prehistoric", "def": "from a time before written records; known only from the physical remains people left behind", "source": "worksheet", "reviewed": true, "lesson": "5.2.2d", "unit": 1}, {"term": "Migration", "def": "the movement of a group of people from one home to a new one", "source": "worksheet", "reviewed": true, "lesson": "5.3.1a", "unit": 1}, {"term": "Related", "def": "belonging to the same family or group; connected because of a shared beginning", "source": "worksheet", "reviewed": true, "lesson": "5.3.1a", "unit": 1}, {"term": "Rank", "def": "a position in an order, from highest to lowest", "source": "worksheet", "reviewed": true, "lesson": "5.3.1b", "unit": 1}, {"term": "Root", "def": "the part a thing grows from; a beginning that later becomes something much larger", "source": "worksheet", "reviewed": true, "lesson": "5.3.1b", "unit": 1}, {"term": "Cycle", "def": "a series of events that repeat in the same order, again and again", "source": "worksheet", "reviewed": true, "lesson": "5.3.2a", "unit": 1}, {"term": "Determine", "def": "to decide or control what happens next", "source": "worksheet", "reviewed": true, "lesson": "5.3.2a", "unit": 1}, {"term": "Universal", "def": "belonging to everyone, everywhere, with no exceptions", "source": "worksheet", "reviewed": true, "lesson": "5.3.2b", "unit": 1}, {"term": "Extreme", "def": "as far as you can possibly go in one direction", "source": "worksheet", "reviewed": true, "lesson": "5.3.2b", "unit": 1}, {"term": "Buddha", "def": "not a name — a word that means \"the awakened one\"", "source": "worksheet", "reviewed": true, "lesson": "5.3.2b", "unit": 1}, {"term": "Explain", "def": "to give the REASONS WHY something happened, not just what happened", "source": "worksheet", "reviewed": true, "lesson": "5.3.3a", "unit": 1}, {"term": "Reaction", "def": "a response to something that already exists; a change made because of a problem", "source": "worksheet", "reviewed": true, "lesson": "5.3.3a", "unit": 1}, {"term": "Sacrifice", "def": "an offering made to the gods — food, an animal, or grain — often placed into a sacred fire", "source": "worksheet", "reviewed": true, "lesson": "5.3.3a", "unit": 1}, {"term": "Ritual", "def": "a set of actions that must be performed exactly the same way every time", "source": "worksheet", "reviewed": true, "lesson": "5.3.3a", "unit": 1}, {"term": "Competition", "def": "when two or more sides struggle against each other to win the same thing", "source": "worksheet", "reviewed": true, "lesson": "5.4.1a", "unit": 1}, {"term": "Human nature", "def": "what people are really like, deep down, when nobody is watching", "source": "worksheet", "reviewed": true, "lesson": "5.4.2a", "unit": 1}, {"term": "Philosophy", "def": "a set of ideas about how to live, and about what is true", "source": "worksheet", "reviewed": true, "lesson": "5.4.2a", "unit": 1}, {"term": "Harmony", "def": "when different things fit together well, without fighting", "source": "worksheet", "reviewed": true, "lesson": "5.4.2a", "unit": 1}, {"term": "Characteristics", "def": "the features that make a thing what it is; the things that are true about it", "source": "worksheet", "reviewed": true, "lesson": "5.5.1a", "unit": 1}, {"term": "Indigenous", "def": "belonging to a place from the very beginning; not brought in from somewhere else", "source": "worksheet", "reviewed": true, "lesson": "5.5.1a", "unit": 1}, {"term": "Spirit", "def": "a being without a body, believed to live in the world", "source": "worksheet", "reviewed": true, "lesson": "5.5.1a", "unit": 1}]}};
+
+// ---------- state ----------
+let unitId = DATA.units[0].id;
+let mode = 'flip';           // 'flip' | 'type' | 'game'
+let deck = [];
+let order = [];
+let pos = 0;
+let flipped = false;
+let defFirst = false;
+let correct = 0, attempted = 0;
+let answered = false;
+
+// game state
+let game = { stage:'setup', players:[{name:'Player One',score:0},{name:'Player Two',score:0}], target:10, turn:0, order:[], pos:0, style:'d2t', dir:'d2t' };
+
+// ---------- helpers ----------
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const $ = id => document.getElementById(id);
+
+function acceptedAnswers(term){
+  const set = new Set(); set.add(term);
+  const paren = term.match(/\(([^)]*)\)/);
+  if(paren){ set.add(paren[1]); }
+  set.add(term.replace(/\([^)]*\)/g,'').trim());
+  return [...set].filter(Boolean);
+}
+function normAns(s){ return s.toLowerCase().trim().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,' ').replace(/^the\s+/,''); }
+function lev(a,b){
+  const m=a.length,n=b.length; if(!m)return n; if(!n)return m;
+  const d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){ d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); }
+  return d[m][n];
+}
+function isCorrect(input, term){
+  const got = normAns(input); if(!got) return false;
+  for(const cand of acceptedAnswers(term)){
+    const want = normAns(cand); if(!want) continue;
+    if(got===want) return true;
+    const tol = want.length>=10 ? 2 : (want.length>=5 ? 1 : 0);
+    if(lev(got,want)<=tol) return true;
+  }
+  return false;
+}
+
+// ---------- deck ----------
+function loadUnit(id){
+  unitId = id;
+  deck = DATA.decks[String(id)];
+  order = deck.map((_,i)=>i);
+  pos = 0; correct=0; attempted=0;
+  if(mode==='game'){ game.stage='setup'; }
+  render();
+}
+function curCard(){ return deck[order[pos]]; }
+
+// ---------- render router ----------
+function render(){
+  const inGame = mode==='game';
+  $('flipView').style.display = mode==='flip' ? '' : 'none';
+  $('typeView').style.display = mode==='type' ? '' : 'none';
+  $('gameView').style.display = inGame ? '' : 'none';
+  $('controls').style.display = inGame ? 'none' : 'flex';
+  $('dirToggleLine').style.display = mode==='flip' ? 'flex' : 'none';
+  $('progress').style.display = inGame ? 'none' : 'block';
+  if(mode==='flip') renderFlip();
+  else if(mode==='type') renderType();
+  else renderGame();
+}
+
+function renderFlip(){
+  const c = curCard();
+  $('progress').innerHTML = `<b>${pos+1}</b> / ${order.length} &nbsp;·&nbsp; ${DATA.units.find(u=>u.id===unitId).name}`;
+  flipped=false; $('card').classList.remove('flipped');
+  const frontIsTerm = !defFirst;
+  $('frontKicker').textContent = frontIsTerm ? 'Term' : 'Definition';
+  $('frontText').className = frontIsTerm ? 'term' : 'def';
+  $('frontText').textContent = frontIsTerm ? c.term : c.def;
+  $('card').querySelector('.back .kicker').textContent = frontIsTerm ? 'Definition' : 'Term';
+  $('backText').className = frontIsTerm ? 'def' : 'term';
+  $('backText').textContent = frontIsTerm ? c.def : c.term;
+}
+function renderType(){
+  const c = curCard();
+  $('progress').innerHTML = `<b>${pos+1}</b> / ${order.length} &nbsp;·&nbsp; ${DATA.units.find(u=>u.id===unitId).name}`;
+  answered=false;
+  $('typePrompt').textContent = c.def;
+  const inp=$('typeInput'); inp.value=''; inp.disabled=false;
+  $('feedback').className='feedback'; $('feedback').innerHTML='';
+  $('checkBtn').textContent='Check';
+  $('score').textContent = attempted ? `Score: ${correct} / ${attempted}` : 'Score: 0 / 0';
+  setTimeout(()=>inp.focus(),30);
+}
+
+// ---------- flip/type actions ----------
+function flip(){ if(mode!=='flip')return; flipped=!flipped; $('card').classList.toggle('flipped',flipped); }
+function next(){ pos=(pos+1)%order.length; render(); }
+function prev(){ pos=(pos-1+order.length)%order.length; render(); }
+function doShuffle(){ shuffle(order); pos=0; if(mode==='type'){correct=0;attempted=0;} render(); }
+function checkAnswer(){
+  const c=curCard();
+  if(answered){ next(); return; }
+  const inp=$('typeInput');
+  const ok=isCorrect(inp.value,c.term);
+  attempted++; if(ok)correct++;
+  answered=true; inp.disabled=true;
+  const fb=$('feedback');
+  fb.className='feedback show '+(ok?'correct':'incorrect');
+  fb.innerHTML = ok ? `✓ Correct! &nbsp;<span class="ans">${c.term}</span>` : `✗ Not quite. Answer: <span class="ans">${c.term}</span>`;
+  $('checkBtn').textContent='Next ›';
+  $('score').textContent = `Score: ${correct} / ${attempted}`;
+}
+
+// ---------- game ----------
+function gameCard(){ return deck[game.order[game.pos]]; }
+function pickDir(){ return game.style==='mix' ? (Math.random()<0.5?'d2t':'t2d') : game.style; }
+function startGame(){
+  game.players[0].name = ($('p1name').value.trim() || 'Player One');
+  game.players[1].name = ($('p2name').value.trim() || 'Player Two');
+  game.players[0].score = 0; game.players[1].score = 0;
+  game.target = Number($('targetSel').value);
+  game.style = $('styleSel').value;
+  game.turn = 0;
+  game.order = deck.map((_,i)=>i); shuffle(game.order); game.pos = 0;
+  game.dir = pickDir();
+  game.stage = 'play';
+  renderGame();
+}
+function nextTurn(){
+  game.turn = 1 - game.turn;
+  game.pos++;
+  if(game.pos >= game.order.length){ shuffle(game.order); game.pos = 0; }
+  game.dir = pickDir();
+  game.stage = 'play';
+  renderGame();
+}
+function judge(gotIt){
+  if(gotIt){
+    game.players[game.turn].score++;
+    if(game.players[game.turn].score >= game.target){ game.stage='win'; renderGame(); return; }
+  }
+  nextTurn();
+}
+function renderGame(){
+  const setup = game.stage==='setup', play = game.stage==='play'||game.stage==='revealed', win = game.stage==='win';
+  $('gameSetup').style.display = setup ? '' : 'none';
+  $('gamePlay').style.display = play ? '' : 'none';
+  $('gameWin').style.display = win ? '' : 'none';
+  if(setup){ return; }
+  if(win){
+    const w = game.players[game.turn];
+    const other = game.players[1-game.turn];
+    $('winnerName').textContent = w.name;
+    $('winnerName').style.color = game.turn===0 ? 'var(--copper-dk)' : 'var(--teal-dk)';
+    $('finalScore').textContent = `${game.players[0].name} ${game.players[0].score} — ${game.players[1].score} ${game.players[1].name}`;
+    return;
+  }
+  // play / revealed
+  const c = gameCard();
+  const t = game.turn;
+  const recallTerm = (game.dir !== 't2d');           // d2t: prompt = definition, recall the term
+  const promptText = recallTerm ? c.def : c.term;
+  const answerText = recallTerm ? c.term : c.def;
+  $('ps1name').textContent = game.players[0].name; $('ps2name').textContent = game.players[1].name;
+  $('ps1val').textContent = game.players[0].score; $('ps2val').textContent = game.players[1].score;
+  $('ps1').classList.toggle('active', t===0); $('ps2').classList.toggle('active', t===1);
+  const behindToWin = game.target - game.players[t].score;
+  $('turnBanner').innerHTML = `${game.players[t].name}'s turn <span class="to-target">${behindToWin} more to win</span>`;
+  $('gcard').className = 'gcard ' + (t===0?'p1':'p2');
+  $('gKicker').className = 'prompt-kicker ' + (t===0?'p1':'p2');
+  $('gKicker').textContent = recallTerm ? 'What term is this?' : 'What does this term mean?';
+  $('gPrompt').textContent = promptText;
+  $('gPrompt').classList.toggle('as-term', !recallTerm);
+  const inp = $('gInput');
+  if(game.stage==='play'){
+    inp.value=''; inp.disabled=false;
+    $('gInputRow').style.display = recallTerm ? '' : 'none';
+    $('gSayNote').style.display = recallTerm ? 'none' : '';
+    $('gReveal').classList.remove('show');
+    $('gBtnsReveal').style.display=''; $('gBtnsJudge').style.display='none';
+    $('gSelfHint').className='selfhint'; $('gSelfHint').textContent='';
+    if(recallTerm) setTimeout(()=>inp.focus(),30);
+  } else { // revealed
+    inp.disabled=true;
+    $('gAnswer').textContent = answerText;
+    $('gAnswer').className = recallTerm ? 'term' : 'gdef';
+    $('gReveal').classList.add('show');
+    $('gSayNote').style.display='none';
+    $('gBtnsReveal').style.display='none'; $('gBtnsJudge').style.display='';
+    const typed = inp.value.trim();
+    const hint = $('gSelfHint');
+    if(recallTerm && typed){
+      const ok = isCorrect(typed, c.term);
+      hint.className = 'selfhint ' + (ok?'ok':'no');
+      hint.textContent = ok ? `You typed “${typed}” — looks right ✓` : `You typed “${typed}” — doesn't match`;
+    } else { hint.className='selfhint'; hint.textContent=''; }
+  }
+}
+function revealGame(){ if(game.stage!=='play')return; game.stage='revealed'; renderGame(); }
+
+// ---------- wire ----------
+function buildUnitSelect(){
+  const s=$('unitSelect'); s.innerHTML='';
+  DATA.units.forEach(u=>{ const o=document.createElement('option'); o.value=u.id; o.textContent=`${u.name}  (${u.count})`; s.appendChild(o); });
+  s.value=unitId; s.onchange=()=>loadUnit(Number(s.value));
+}
+function setMode(m){
+  mode=m;
+  $('mFlip').classList.toggle('active',m==='flip');
+  $('mType').classList.toggle('active',m==='type');
+  $('mGame').classList.toggle('active',m==='game');
+  if(m!=='game'){ pos=0; if(m==='type'){correct=0;attempted=0;} }
+  render();
+}
+
+$('mFlip').onclick=()=>setMode('flip');
+$('mType').onclick=()=>setMode('type');
+$('mGame').onclick=()=>setMode('game');
+$('card').onclick=flip;
+$('flipBtn').onclick=flip;
+$('nextBtn').onclick=next;
+$('prevBtn').onclick=prev;
+$('shuffleBtn').onclick=doShuffle;
+$('checkBtn').onclick=checkAnswer;
+$('dirToggle').onchange=e=>{ defFirst=e.target.checked; render(); };
+$('typeInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); checkAnswer(); }});
+
+$('startGameBtn').onclick=startGame;
+$('revealBtn').onclick=revealGame;
+$('gotBtn').onclick=()=>judge(true);
+$('missBtn').onclick=()=>judge(false);
+$('gInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); revealGame(); }});
+$('againBtn').onclick=()=>{ game.players[0].score=0; game.players[1].score=0; game.turn=0; shuffle(game.order); game.pos=0; game.dir=pickDir(); game.stage='play'; renderGame(); };
+$('newpBtn').onclick=()=>{ game.stage='setup'; renderGame(); };
+$('newGameLink').onclick=()=>{ game.stage='setup'; renderGame(); };
+
+document.addEventListener('keydown',e=>{
+  const inInput = ['INPUT','SELECT','TEXTAREA'].includes((document.activeElement||{}).tagName);
+  if(inInput) return;
+  if(mode==='game'){ if(e.key==='Enter' && game.stage==='play'){ e.preventDefault(); revealGame(); } return; }
+  if(e.key===' '||e.key==='Enter'){ if(mode==='flip'){e.preventDefault(); flip();} }
+  else if(e.key==='ArrowRight') next();
+  else if(e.key==='ArrowLeft') prev();
+});
+
+buildUnitSelect();
+loadUnit(unitId);
+</script>
+</body>
+</html>
